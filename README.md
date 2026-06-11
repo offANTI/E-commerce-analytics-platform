@@ -198,7 +198,7 @@ dbt test --profiles-dir /usr/app/dbt
 ## Data Sources
 
 - [DummyJSON API](https://dummyjson.com) — products, categories
-- [Escuela API](https://api.escuelajs.co) — products, categories, users
+- [Escuela API](https://api.escuelajs.co/api/v1/products) — products, categories, users
 
 ---
 
@@ -210,3 +210,22 @@ dbt test --profiles-dir /usr/app/dbt
 | Total Items Sold | 15,217 |
 | Unique Customers | 649 |
 | Repeat Rate | 90% |
+
+## Data Insights
+
+Two stores with fundamentally different business profiles:
+
+| Metric | Escuela | DummyJSON |
+|---|---|---|
+| Total Revenue | ~$30M | ~$300K |
+| Avg Order Value | ~$10,000 | ~$700 |
+| Profile | Premium / B2B | Budget / Demo |
+
+Revenue peaks in April 2026 across both stores suggest 
+a seasonal or promotional pattern worth investigating.
+---
+## Author
+
+Ruslan Tuliei
+
+GitHub: https://github.com/offANTI
