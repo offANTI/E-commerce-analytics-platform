@@ -57,7 +57,7 @@ Production-style analytics engineering project built on real e-commerce data fro
 | Visualization | Metabase |
 | Testing | pytest, dbt tests |
 | Version Control | Git / GitHub |
-
+| Code Quality     | Ruff        |
 ---
 
 ## Data Pipeline
