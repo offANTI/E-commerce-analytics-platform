@@ -7,7 +7,6 @@ from sqlalchemy import text
 from database.connection import engine
 from utils.logger import get_project_logger
 
-
 logger = get_project_logger(__name__)
 
 

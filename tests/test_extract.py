@@ -1,7 +1,9 @@
 import pytest
 import requests_mock
-from extract.api_client import extract_from_api
 from requests.exceptions import HTTPError
+
+from extract.api_client import extract_from_api
+
 
 def test_extract_from_api_success():
     test_url = "https://fake-api.com"

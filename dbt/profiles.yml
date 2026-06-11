@@ -1,0 +1,12 @@
+ecommerce_analytics:
+  target: dev
+  outputs:
+    dev:
+      type: postgres
+      host: postgres_db
+      port: 5432
+      user: postgres
+      password: my_secret_password_123
+      dbname: ecommerce_analytics
+      schema: silver
+      threads: 4

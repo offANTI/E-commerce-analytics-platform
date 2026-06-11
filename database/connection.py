@@ -1,11 +1,9 @@
-from pathlib import Path
 
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine import Connection
 
 from config.settings import BASE_DIR, settings
 from utils.logger import get_project_logger
-
 
 logger = get_project_logger(__name__)
 
