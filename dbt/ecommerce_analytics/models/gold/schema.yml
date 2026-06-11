@@ -1,0 +1,26 @@
+version: 2
+
+models:
+  - name: gold_revenue_summary
+    description: "Daily revenue aggregated by store"
+    columns:
+      - name: store_name
+        tests:
+          - not_null
+      - name: total_revenue
+        tests:
+          - not_null
+      - name: total_orders
+        tests:
+          - not_null
+
+  - name: gold_customer_ltv
+    description: "Customer lifetime value with ranking"
+    columns:
+      - name: user_id
+        tests:
+          - unique
+          - not_null
+      - name: lifetime_value
+        tests:
+          - not_null
