@@ -1,5 +1,5 @@
 import random
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from sqlalchemy import text
@@ -70,7 +70,7 @@ def generate_mock_orders(order_count: int = 5000, seed: int = 42) -> None:
 
         orders = []
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         for _ in range(order_count):
             user_id = random.choice(user_ids)
