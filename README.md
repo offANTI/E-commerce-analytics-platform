@@ -325,7 +325,15 @@ Incremental models add complexity (watermark logic, MERGE behavior). This is jus
 Running `docker exec` from inside the Airflow container isn't possible without mounting `/var/run/docker.sock`, which grants the container root access to the host. Embedding dbt in the Airflow image avoids this security trade-off entirely, at the cost of a duplicated dbt installation across two containers — an acceptable trade-off for a local development pipeline.
 
 ---
+## Known Limitations/ArArchitecture Decisions
 
+**ETL not yet orchestrated via Airflow:**
+The ETL pipeline (`main.py`) is currently triggered manually. 
+Integrating it into the Airflow DAG caused dependency conflicts — 
+the ETL app requires Python 3.11 + pydantic v2, while Airflow 2.8 
+runs on Python 3.8. The correct production solution would be 
+`KubernetesPodOperator` — running ETL in an isolated pod with its 
+own Python environment, keeping Airflow lightweight.
 ## Author
 
 Ruslan Tuliei
