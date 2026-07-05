@@ -1,162 +1,158 @@
 # E-commerce Analytics Platform
 
-End-to-end data pipeline built on real e-commerce data from two public APIs. Bronze → Silver → Gold Medallion Architecture, dbt transformations, Airflow orchestration, and a Metabase dashboard.
+An end-to-end analytics project built around two public e-commerce APIs.
+
+The pipeline ingests raw data into PostgreSQL, transforms it with dbt using the Medallion architecture (Bronze → Silver → Gold), runs scheduled workflows with Airflow, and exposes business metrics through Metabase.
+
+The goal of the project was to build a small analytics stack that resembles a real production workflow rather than another ETL demo.
 
 ---
 
-## What this project does
+# Architecture
 
-Two public APIs (DummyJSON and Escuela) feed raw data into a PostgreSQL Bronze layer. A Python ETL app handles the extraction and loading. From there, dbt transforms the data through Silver (cleaning and validation) into Gold (business-ready aggregates). Airflow schedules the dbt pipeline nightly, and Metabase sits on top of the Gold layer for dashboards.
+```text
+DummyJSON API      Escuela API
+       │                 │
+       └─────────┬───────┘
+                 ▼
+          Python ETL
+                 ▼
+      PostgreSQL (Bronze)
+                 ▼
+      dbt Models (Silver)
+                 ▼
+       dbt Models (Gold)
+                 ▼
+      Metabase Dashboard
 
-## Architecture
-
-```
-┌─────────────────┐    ┌─────────────────┐
-│   DummyJSON API │    │   Escuela API   │
-└────────┬────────┘    └────────┬────────┘
-         │                      │
-         └──────────┬───────────┘
-                    ▼
-         ┌─────────────────────┐
-         │   Python ETL App    │
-         │  (extract + load)   │
-         └──────────┬──────────┘
-                    ▼
-         ┌─────────────────────┐
-         │  BRONZE  (raw)      │
-         │  PostgreSQL schemas │
-         └──────────┬──────────┘
-                    ▼
-         ┌─────────────────────┐
-         │  SILVER  (cleaned)  │
-         │  dbt views +        │
-         │  incremental model  │
-         └──────────┬──────────┘
-                    ▼
-         ┌─────────────────────┐
-         │  GOLD  (aggregated) │
-         │  dbt tables         │
-         └──────────┬──────────┘
-                    ▼
-         ┌─────────────────────┐
-         │  Metabase Dashboard │
-         └─────────────────────┘
-
-      Orchestrated nightly by Airflow (dbt run → dbt test)
+      Airflow
+(dbt run → dbt test)
 ```
 
 ---
 
-## Tech Stack
+# Tech Stack
 
-| Layer | Technology |
-|---|---|
-| Ingestion | Python, Requests |
-| Storage | PostgreSQL 15 |
-| Transformation | dbt (dbt-postgres 1.7) |
-| Orchestration | Apache Airflow 2.8 |
-| Containerization | Docker Compose |
-| Visualization | Metabase |
-| Testing | pytest, dbt tests |
-| Code Quality | Ruff |
-| Version Control | Git / GitHub |
-
----
-
-## Data layers
-
-**Bronze** stores everything as-is from the APIs: orders, products, categories, users. No transformation, no filtering.
-
-**Silver** cleans and validates. Nulls and negative amounts are filtered out, JSONB fields are unpacked into typed columns, and duplicates are handled. The `silver_orders_incremental` model uses a watermark-based pattern so only new rows are processed on each run instead of rebuilding the full table every night.
-
-**Gold** aggregates for the dashboard: daily and monthly revenue by store, customer lifetime value with ranking.
+| Layer            | Technology         |
+| ---------------- | ------------------ |
+| Language         | Python             |
+| Storage          | PostgreSQL 15      |
+| Transformations  | dbt                |
+| Orchestration    | Apache Airflow 2.8 |
+| Visualization    | Metabase           |
+| Containerization | Docker Compose     |
+| Testing          | pytest, dbt tests  |
+| Code Quality     | Ruff               |
+| Version Control  | Git, GitHub        |
 
 ---
 
-## Incremental loading
+# Pipeline
 
-The `silver_orders_incremental` model only processes rows that arrived after the last run:
+The project follows a simple Medallion workflow.
+
+**Bronze** stores raw API responses exactly as they were received.
+
+**Silver** is responsible for cleaning and validation. JSON fields are unpacked into structured columns, invalid records are removed, duplicates are handled, and orders are processed incrementally.
+
+**Gold** contains reporting models used by Metabase. These tables power dashboards with revenue trends, customer lifetime value, repeat customers, and other business metrics.
+
+---
+
+# Incremental Processing
+
+Orders are processed incrementally using dbt.
 
 ```sql
 {% if is_incremental() %}
-  AND created_at > (SELECT MAX(created_at) FROM {{ this }})
+WHERE created_at > (SELECT MAX(created_at) FROM {{ this }})
 {% endif %}
 ```
 
-On the first run it loads everything. After that it only touches new rows:
+The first execution loads the complete dataset. Every following run processes only newly arrived orders.
 
 ```
-1st run — SELECT 5000   (full load, table didn't exist)
-2nd run — INSERT 0 0    (nothing new, scan skipped entirely)
-3rd run — INSERT 0 1    (one new row detected and merged)
+1st run → Full load
+2nd run → No new records
+3rd run → One new order processed
 ```
 
-This pattern only makes sense for a growing fact table like orders. Products and users are small reference tables — rebuilding them from scratch each night takes milliseconds and adding incremental logic would just add unnecessary complexity.
+Incremental models are only used where they provide a real benefit. Small lookup tables such as products or users are rebuilt from scratch because they're inexpensive to refresh and keeping them incremental would only add unnecessary complexity.
 
 ---
 
-## Airflow orchestration
+# Orchestration
 
-A DAG runs nightly at 02:00:
+Airflow schedules the transformation pipeline every night.
 
 ```
-dbt_run → dbt_test
+dbt run
+      ↓
+dbt test
 ```
 
-If `dbt_run` fails, `dbt_test` is skipped automatically. dbt is installed directly into the Airflow image via `Dockerfile.airflow` rather than calling a separate dbt container. This avoids needing to mount the Docker socket, which would give the Airflow container root-level access to the host machine.
+If model execution fails, the validation step is skipped automatically.
+
+Instead of running dbt in a separate container, it is installed directly into the Airflow image. This keeps the deployment simpler and avoids mounting the Docker socket into the scheduler container.
 
 ---
 
-## Data quality
+# Data Quality
 
-19 dbt tests run on every pipeline execution: `not_null` and `unique` checks on primary keys, and `accepted_values` validation on store names.
+Every pipeline run executes dbt tests before the data reaches the reporting layer.
+
+Current coverage includes:
+
+* `not_null`
+* `unique`
+* `accepted_values`
 
 ```
-Done. PASS=19 WARN=0 ERROR=0 SKIP=0 TOTAL=19
+PASS=19 WARN=0 ERROR=0
 ```
 
 ---
 
-## Dashboard
+# Dashboard
 
-Built in Metabase on top of the Gold layer. KPIs: Orders, Items Sold, Repeat Rate, Customers. Charts cover monthly revenue trend, revenue and average order value by store, top products, and customer LTV segments.
+The reporting layer is built in Metabase on top of the Gold models.
+
+The dashboard tracks:
+
+* revenue
+* average order value
+* customer lifetime value
+* repeat customer rate
+* top-selling products
+* monthly sales trends
 
 ![Dashboard](docs/dashboard.jpg)
 
 ---
 
-## Data insights
+# Sample Insights
 
-The two stores have very different profiles:
+Using the provided demo datasets:
 
-| Metric | Escuela | DummyJSON |
-|---|---|---|
-| Total Revenue | ~$30M | ~$300K |
-| Avg Order Value | ~$10,000 | ~$700 |
-| Profile | Premium / B2B | Budget / Demo |
+| Metric              |       Escuela | DummyJSON |
+| ------------------- | ------------: | --------: |
+| Revenue             |         ~$30M |    ~$300K |
+| Average Order Value |      ~$10,000 |     ~$700 |
+| Market Profile      | Premium / B2B |    Budget |
 
-Revenue peaks in April 2026 across both stores, which could suggest a seasonal or promotional pattern worth investigating.
+Both datasets show a revenue peak in April 2026. Since the source data is synthetic, this shouldn't be treated as a real business pattern, but it demonstrates how the reporting layer highlights trends worth investigating.
 
 ---
 
-## Project structure
+# Project Structure
 
-```
-E_commerce_Analytics_Platform/
+```text
+E-commerce-analytics-platform/
 ├── config/
 ├── dags/
-│   └── ecommerce_pipeline.py
 ├── database/
 ├── dbt/
-│   └── ecommerce_analytics/
-│       ├── models/
-│       │   ├── silver/
-│       │   └── gold/
-│       └── macros/
 ├── src/
-│   ├── extract/
-│   ├── load/
-│   └── transform/
 ├── tests/
 ├── utils/
 ├── docker-compose.yml
@@ -168,55 +164,53 @@ E_commerce_Analytics_Platform/
 
 ---
 
-## Quick start
-
-Prerequisites: Docker and Docker Compose.
+# Getting Started
 
 ```bash
 git clone https://github.com/offANTI/E-commerce-analytics-platform.git
 cd E-commerce-analytics-platform
 
-# create .env with your credentials (see below)
+docker compose up -d
 
-docker-compose up -d
-
-# load data into Bronze
 docker exec -it bsg_etl_app python main.py
-
-# Airflow UI — http://localhost:8080 (admin / admin)
-# Metabase  — http://localhost:3000
 ```
 
-Required `.env` variables:
+Airflow:
 
 ```
-LOG_LEVEL=INFO
-DB_USER=postgres
-DB_PASSWORD=your_password
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=ecommerce_analytics
-DUMMY_PRODUCTS_URL=https://dummyjson.com/products
-DUMMY_CATEGORIES_URL=https://dummyjson.com/products/categories
-ESCUELA_PRODUCTS_URL=https://api.escuelajs.co/api/v1/products
-ESCUELA_CATEGORIES_URL=https://api.escuelajs.co/api/v1/categories
-ESCUELA_USERS_URL=https://api.escuelajs.co/api/v1/users
+http://localhost:8080
+```
+
+Metabase:
+
+```
+http://localhost:3000
 ```
 
 ---
 
-## Key metrics (sample data)
+# Current Limitations
 
-5,000 orders, 15,217 items sold, 649 unique customers, 90% repeat rate.
+The ETL application currently runs separately from the Airflow DAG.
+
+The main reason is a dependency mismatch: the ETL uses Python 3.11 with Pydantic v2, while Airflow 2.8 is based on Python 3.8. Combining both environments would make the deployment unnecessarily fragile.
+
+In a production setup I'd isolate the ETL completely and trigger it through `KubernetesPodOperator`, allowing Airflow and the ETL to use independent Python environments.
 
 ---
 
-## Known limitations
+# What's Next
 
-The ETL pipeline runs manually for now. Integrating it into the Airflow DAG hit a Python version conflict: the ETL app needs Python 3.11 and pydantic v2, while Airflow 2.8 runs on Python 3.8. The right production solution is `KubernetesPodOperator` — ETL runs in an isolated pod with its own Python environment, and Airflow stays a lightweight orchestrator without carrying the ETL's dependencies.
+* add CI with GitHub Actions
+* improve test coverage
+* introduce data freshness monitoring
+* migrate to object storage for raw data
+* deploy the platform to Kubernetes
 
 ---
 
 ## Author
 
-Ruslan Tuliei — [@offANTI](https://github.com/offANTI)
+**Ruslan Tuliei**
+
+GitHub: https://github.com/offANTI
