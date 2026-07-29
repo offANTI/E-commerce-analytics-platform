@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Environment
+.env
+*.env
+
+# dbt
+dbt/profiles.yml
+dbt/.user.yml
+dbt/ecommerce_analytics/target/
+dbt/ecommerce_analytics/logs/
+dbt/ecommerce_analytics/dbt_packages/
+dbt/logs/
+
+# Airflow logs
+logs/
