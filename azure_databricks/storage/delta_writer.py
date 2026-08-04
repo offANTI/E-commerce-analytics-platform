@@ -18,8 +18,6 @@ def merge_into_delta(
     merge_key: str,
     spark: SparkSession,
 ) -> None:
-    spark.conf.set("spark.databricks.delta.schema.autoMerge.enabled", "true")
-
     if DeltaTable.isDeltaTable(spark, path):
         target = DeltaTable.forPath(spark, path)
         (
@@ -30,6 +28,7 @@ def merge_into_delta(
             )
             .whenMatchedUpdateAll()
             .whenNotMatchedInsertAll()
+            .withSchemaEvolution()
             .execute()
         )
     else:
