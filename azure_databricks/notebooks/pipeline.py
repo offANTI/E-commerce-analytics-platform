@@ -1,3 +1,6 @@
+import sys
+import os
+sys.path.append(os.path.abspath(".."))
 from pyspark.sql import SparkSession
 from extract.api_client import APIClient
 from storage.bronze_writer import write_to_bronze
