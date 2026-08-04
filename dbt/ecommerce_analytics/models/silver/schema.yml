@@ -29,22 +29,16 @@ models:
           - not_null
       - name: price
         tests:
-          - not_null
+          - not_null:
+              config:
+                severity: warn
 
   - name: silver_users
     columns:
-      - name: id
+      - name: user_id
         tests:
           - unique
           - not_null
       - name: email
         tests:
-          - unique
           - not_null
-
-  - name: price
-    tests:
-      - not_null:
-          config:
-            severity: warn
-

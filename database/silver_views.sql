@@ -4,9 +4,6 @@ DROP VIEW IF EXISTS silver.dummy_products CASCADE;
 DROP VIEW IF EXISTS silver.escuela_categories CASCADE;
 DROP VIEW IF EXISTS silver.dummy_categories CASCADE;
 DROP VIEW IF EXISTS silver.escuela_users CASCADE;
--- ==========================================
--- ESCUELA PRODUCTS
--- ==========================================
 
 CREATE OR REPLACE VIEW silver.escuela_products AS
 SELECT
@@ -30,9 +27,7 @@ FROM bronze.escuela_products,
 LATERAL jsonb_array_elements(raw_data) AS item;
 
 
--- ==========================================
--- DUMMY PRODUCTS
--- ==========================================
+
 
 CREATE OR REPLACE VIEW silver.dummy_products AS
 SELECT
@@ -47,9 +42,7 @@ FROM bronze.dummy_products,
 LATERAL jsonb_array_elements(raw_data->'products') AS item;
 
 
--- ==========================================
--- ESCUELA CATEGORIES
--- ==========================================
+
 
 CREATE OR REPLACE VIEW silver.escuela_categories AS
 SELECT
@@ -60,9 +53,6 @@ FROM bronze.escuela_categories,
 LATERAL jsonb_array_elements(raw_data) AS item;
 
 
--- ==========================================
--- DUMMY CATEGORIES
--- ==========================================
 
 CREATE OR REPLACE VIEW silver.dummy_categories AS
 SELECT
@@ -72,9 +62,7 @@ FROM bronze.dummy_categories,
 LATERAL jsonb_array_elements(raw_data) AS item;
 
 
--- ==========================================
--- ESCUELA USERS
--- ==========================================
+
 
 CREATE OR REPLACE VIEW silver.escuela_users AS
 SELECT

@@ -1,13 +1,16 @@
 {{ config(materialized='view', schema='silver') }}
 
-SELECT
-    id,
-    raw_data->>'firstName'  AS first_name,
-    raw_data->>'lastName'   AS last_name,
-    raw_data->>'email'      AS email,
-    raw_data->>'gender'     AS gender,
-    raw_data->>'age'        AS age,
-    loaded_at
-FROM {{ source('bronze', 'escuela_users') }}
-WHERE raw_data IS NOT NULL
-  AND raw_data->>'email' IS NOT NULL
+WITH ranked AS (
+    SELECT
+        (item->>'id')::INT AS user_id,
+        (item->>'email')::VARCHAR(255) AS email,
+        (item->>'name')::VARCHAR(255) AS name,
+        (item->>'role')::VARCHAR(50) AS role,
+        (item->>'avatar')::TEXT AS avatar_url,
+        ROW_NUMBER() OVER (PARTITION BY item->>'id' ORDER BY loaded_at DESC) AS rn
+    FROM {{ source('bronze', 'escuela_users') }},
+    LATERAL jsonb_array_elements(raw_data) AS item
+)
+SELECT user_id, email, name, role, avatar_url
+FROM ranked
+WHERE rn = 1

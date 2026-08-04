@@ -2,12 +2,13 @@ from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
 
 from storage.silver_writer import write_to_silver
+from transform.dedup import deduplicate_by_key
 
 
 def build_silver_escuela_products(spark: SparkSession, bronze_base: str, silver_base: str) -> None:
     schema = "id INT, title STRING, price DOUBLE, category STRUCT<id: INT>"
 
-    df = (
+    parsed_df = (
         spark.read.format("delta").load(f"{bronze_base}/escuela_products/")
         .withColumn("parsed", F.from_json("raw_data", schema))
         .select(
@@ -24,5 +25,7 @@ def build_silver_escuela_products(spark: SparkSession, bronze_base: str, silver_
             F.col("loaded_at"),
         )
     )
+
+    df = deduplicate_by_key(parsed_df, key_column="product_id")
 
     write_to_silver(df=df, path=f"{silver_base}/silver_products/", merge_key="product_id", spark=spark)

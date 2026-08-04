@@ -1,8 +1,8 @@
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
-from pyspark.sql.window import Window
 
 from storage.silver_writer import write_to_silver
+from transform.dedup import deduplicate_by_key
 
 
 def build_silver_users(spark: SparkSession, bronze_base: str, silver_base: str) -> None:
@@ -22,13 +22,6 @@ def build_silver_users(spark: SparkSession, bronze_base: str, silver_base: str) 
         .filter(F.col("email").isNotNull())
     )
 
-    window = Window.partitionBy("user_id").orderBy(F.col("loaded_at").desc())
-
-    df = (
-        parsed_df
-        .withColumn("rn", F.row_number().over(window))
-        .filter(F.col("rn") == 1)
-        .drop("rn")
-    )
+    df = deduplicate_by_key(parsed_df, key_column="user_id")
 
     write_to_silver(df=df, path=f"{silver_base}/silver_users/", merge_key="user_id", spark=spark)
