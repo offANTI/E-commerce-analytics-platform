@@ -1,4 +1,5 @@
 import random
+import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
@@ -27,8 +28,8 @@ def generate_mock_orders(
     user_ids = [row["user_id"] for row in users_df.select("user_id").collect()]
 
     product_pool: list[dict[str, Any]] = []
-    for row in dummy_products_df.select("product_id", "price").collect():
-        product_pool.append({"product_id": row["product_id"], "price": float(row["price"]), "store_name": "DummyJSON"})
+    for row in dummy_products_df.select("id", "price").collect():
+        product_pool.append({"product_id": row["id"], "price": float(row["price"]), "store_name": "DummyJSON"})
     for row in escuela_products_df.select("product_id", "price").collect():
         product_pool.append({"product_id": row["product_id"], "price": float(row["price"]), "store_name": "Escuela"})
 
@@ -47,13 +48,15 @@ def generate_mock_orders(
         total_amount = round(quantity * unit_price, 2)
         order_date = now - timedelta(days=random.randint(0, 90))
         orders.append({
+            "order_id": str(uuid.uuid4()),
             "user_id": user_id,
             "product_id": product["product_id"],
             "store_name": product["store_name"],
             "quantity": quantity,
             "unit_price": unit_price,
             "total_amount": total_amount,
-            "order_date": order_date.isoformat(),
+            "order_date": order_date.date().isoformat(),
+            "created_at": now.isoformat(),
         })
 
     print(f"Mock orders generated successfully. rows={order_count}")
