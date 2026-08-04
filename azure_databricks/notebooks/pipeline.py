@@ -42,6 +42,7 @@ write_to_bronze(to_bronze_df(escuela_users_raw, "escuela"), f"{BRONZE_BASE}/escu
 build_silver_dummy_products(spark, BRONZE_BASE, SILVER_BASE)
 build_silver_users(spark, BRONZE_BASE, SILVER_BASE)
 build_silver_escuela_products(spark, BRONZE_BASE, SILVER_BASE)
-build_silver_orders(spark, BRONZE_BASE, SILVER_BASE)
+
 orders_df = generate_mock_orders(spark=spark, silver_base=SILVER_BASE, order_count=5000, seed=42)
 write_to_bronze(orders_df, f"{BRONZE_BASE}/orders/")
+build_silver_orders(spark, BRONZE_BASE, SILVER_BASE)
