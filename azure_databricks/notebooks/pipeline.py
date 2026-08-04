@@ -6,6 +6,8 @@ from extract.api_client import APIClient
 from storage.bronze_writer import write_to_bronze
 from transform.silver_dummy_products import build_silver_dummy_products
 from transform.generate_mock_orders import generate_mock_orders
+from transform.silver_users import build_silver_users
+from transform.silver_escuela_products import build_silver_escuela_products
 import json
 from datetime import datetime, timezone
 
@@ -38,6 +40,8 @@ write_to_bronze(to_bronze_df(escuela_products_raw, "escuela"), f"{BRONZE_BASE}/e
 write_to_bronze(to_bronze_df(escuela_users_raw, "escuela"), f"{BRONZE_BASE}/escuela_users/")
 
 build_silver_dummy_products(spark, BRONZE_BASE, SILVER_BASE)
+build_silver_users(spark, BRONZE_BASE, SILVER_BASE)
+build_silver_escuela_products(spark, BRONZE_BASE, SILVER_BASE)
 
 orders_df = generate_mock_orders(spark=spark, silver_base=SILVER_BASE, order_count=5000, seed=42)
 write_to_bronze(orders_df, f"{BRONZE_BASE}/orders/")
