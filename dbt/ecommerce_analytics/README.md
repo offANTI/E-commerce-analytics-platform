@@ -64,22 +64,22 @@ Production-style analytics engineering project built on real e-commerce data fro
 
 ### Bronze Layer
 Raw data ingested from APIs and stored as-is in PostgreSQL:
-- `bronze.orders` — transaction records
-- `bronze.dummy_products` — product catalog (DummyJSON)
-- `bronze.dummy_categories` — product categories
-- `bronze.escuela_products` — product catalog (Escuela)
-- `bronze.escuela_users` — customer records
+- `bronze.orders` = transaction records
+- `bronze.dummy_products` = product catalog (DummyJSON)
+- `bronze.dummy_categories` = product categories
+- `bronze.escuela_products` = product catalog (Escuela)
+- `bronze.escuela_users` = customer records
 
 ### Silver Layer (dbt views)
 Cleaned and validated transformations on top of Bronze:
-- `silver.silver_orders` — validated orders, nulls and negatives filtered
-- `silver.silver_products` — parsed product attributes from JSONB
-- `silver.silver_users` — parsed customer profiles from JSONB
+- `silver.silver_orders` = validated orders, nulls and negatives filtered
+- `silver.silver_products` = parsed product attributes from JSONB
+- `silver.silver_users` = parsed customer profiles from JSONB
 
 ### Gold Layer (dbt tables)
 Aggregated business metrics ready for dashboards:
-- `gold.gold_revenue_summary` — daily revenue by store
-- `gold.gold_customer_ltv` — customer lifetime value with ranking
+- `gold.gold_revenue_summary` = daily revenue by store
+- `gold.gold_customer_ltv` = customer lifetime value with ranking
 
 ---
 
@@ -87,9 +87,9 @@ Aggregated business metrics ready for dashboards:
 
 19 automated dbt tests across all layers:
 
-- `not_null` — critical fields validated at Silver and Gold
-- `unique` — primary keys enforced
-- `accepted_values` — store names validated against known sources
+- `not_null` = critical fields validated at Silver and Gold
+- `unique` = primary keys enforced
+- `accepted_values` = store names validated against known sources
 
 ```bash
 dbt test --profiles-dir /usr/app/dbt
@@ -197,8 +197,8 @@ dbt test --profiles-dir /usr/app/dbt
 
 ## Data Sources
 
-- [DummyJSON API](https://dummyjson.com) — products, categories
-- [Escuela API](https://api.escuelajs.co) — products, categories, users
+- [DummyJSON API](https://dummyjson.com) = products, categories
+- [Escuela API](https://api.escuelajs.co) = products, categories, users
 
 ---
 

@@ -2,6 +2,10 @@ from typing import Any
 
 import requests
 
+from utils.logger import get_project_logger
+
+logger = get_project_logger(__name__)
+
 
 class APIClient:
     def __init__(self, base_url: str, timeout: int = 10):
@@ -16,23 +20,23 @@ class APIClient:
         headers: dict[str, str] | None = None,
     ) -> dict[str, Any] | list[dict[str, Any]]:
         url = f"{self.base_url}/{endpoint.lstrip('/')}"
-        print(f"Extracting data from API: {url}")
+        logger.info("Extracting data from API: %s", url)
 
         try:
             response = self.session.get(url, params=params, headers=headers, timeout=self.timeout)
             response.raise_for_status()
             data = response.json()
-            print(f"Successfully extracted data from API: {url}")
+            logger.info("Successfully extracted data from API: %s", url)
             return data
         except requests.exceptions.Timeout:
-            print(f"API timeout: {url}")
+            logger.exception("API timeout: %s", url)
             raise
         except requests.exceptions.HTTPError:
-            print(f"API returned HTTP error: {url}")
+            logger.exception("API returned HTTP error: %s", url)
             raise
         except requests.exceptions.RequestException:
-            print(f"API request failed: {url}")
+            logger.exception("API request failed: %s", url)
             raise
         except ValueError:
-            print(f"Invalid JSON response: {url}")
+            logger.exception("Invalid JSON response: %s", url)
             raise
