@@ -1,4 +1,4 @@
-
+import sqlparse
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine import Connection
 
@@ -31,10 +31,11 @@ def run_sql_file(file_name: str) -> None:
         raise FileNotFoundError(f"SQL file not found: {sql_path}")
 
     sql_script = sql_path.read_text(encoding="utf-8")
+    statements = sqlparse.split(sql_script)
 
     try:
         with engine.begin() as connection:
-            for statement in sql_script.split(";"):
+            for statement in statements:
                 clean_statement = statement.strip()
 
                 if clean_statement:

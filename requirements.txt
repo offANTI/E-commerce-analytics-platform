@@ -10,3 +10,5 @@ pytest==8.2.1
 requests-mock==1.12.1
 
 ruff==0.11.13
+
+sqlparse
