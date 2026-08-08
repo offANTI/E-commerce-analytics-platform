@@ -4,8 +4,8 @@ x-airflow-common: &airflow-common
     dockerfile: Dockerfile.airflow
   environment:
     AIRFLOW__CORE__EXECUTOR: LocalExecutor
-    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@airflow_db/airflow
-    AIRFLOW__CORE__FERNET_KEY: ''
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:${AIRFLOW_DB_PASSWORD}@airflow_db/airflow
+    AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW_FERNET_KEY}
     AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
     AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
   volumes:
@@ -21,7 +21,7 @@ services:
     container_name: bsg_postgres_container
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: my_secret_password_123
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ecommerce_analytics
     ports:
       - "5432:5432"
@@ -34,7 +34,7 @@ services:
     container_name: bsg_airflow_db
     environment:
       POSTGRES_USER: airflow
-      POSTGRES_PASSWORD: airflow
+      POSTGRES_PASSWORD: ${AIRFLOW_DB_PASSWORD}
       POSTGRES_DB: airflow
     volumes:
       - airflow_pgdata:/var/lib/postgresql/data
@@ -45,7 +45,7 @@ services:
     entrypoint: /bin/bash
     command:
       - -c
-      - airflow db init && airflow users create --username admin --password admin --firstname Admin --lastname Admin --role Admin --email admin@example.com
+      - airflow db init && airflow users create --username admin --password ${AIRFLOW_ADMIN_PASSWORD} --firstname Admin --lastname Admin --role Admin --email admin@example.com
     restart: "no"
 
   airflow-webserver:
