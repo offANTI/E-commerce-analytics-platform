@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 sys.path.append(os.path.abspath(".."))
 
 from pyspark.sql import SparkSession
+from pyspark.sql import functions as F
 
 from extract.api_client import APIClient
 from storage.bronze_writer import write_to_bronze
@@ -28,6 +29,7 @@ BRONZE_BASE = f"abfss://bronze@{STORAGE_ACCOUNT}.dfs.core.windows.net"
 SILVER_BASE = f"abfss://silver@{STORAGE_ACCOUNT}.dfs.core.windows.net"
 GOLD_BASE = f"abfss://gold@{STORAGE_ACCOUNT}.dfs.core.windows.net"
 
+
 def to_bronze_df(raw_data, source_name):
     if isinstance(raw_data, dict):
         raw_data = [raw_data]
@@ -35,8 +37,8 @@ def to_bronze_df(raw_data, source_name):
         {"raw_data": json.dumps(r), "source": source_name, "loaded_at": datetime.now(timezone.utc).isoformat()}
         for r in raw_data
     ]
-    return spark.createDataFrame(rows)
-
+    df = spark.createDataFrame(rows)
+    return df.withColumn("ingestion_id", F.monotonically_increasing_id())
 
 logger.info("Starting extract phase")
 

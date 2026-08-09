@@ -1,6 +1,6 @@
 # E-commerce Analytics Platform
 
-I built this to understand what a real analytics stack actually feels like to build and run  not another "ETL demo" that ends at a single script, but something with the pieces production data teams actually deal with: orchestration, testing, incremental loads, and a reporting layer someone could genuinely look at.
+I built this to understand what a real analytics stack actually feels like to build and run - not another "ETL demo" that ends at a single script, but something with the pieces production data teams actually deal with: orchestration, testing, incremental loads, and a reporting layer someone could genuinely look at.
 
 The pipeline pulls from two public e-commerce APIs (DummyJSON and Escuela), lands raw data in PostgreSQL, transforms it through dbt using a Bronze → Silver → Gold structure, runs on a nightly Airflow schedule, and surfaces business metrics in Metabase.
 
@@ -40,16 +40,16 @@ DummyJSON API      Escuela API
 ## Tech Stack
 
 | Layer            | Technology                  |
-| ---------------- |-----------------------------|
-| Language         | Python                      |
-| Storage          | PostgreSQL 15               |
-| Transformations  | dbt                         |
-| Orchestration    | Apache Airflow 2.8          |
-| Visualization    | Metabase                    |
-| Containerization | Docker Compose              |
-| Testing          | pytest, dbt tests           |
-| Code Quality     | Ruff (linting + formatting) |
-| Version Control  | Git, GitHub                 |
+| ---------------- |------------------------------|
+| Language         | Python                       |
+| Storage          | PostgreSQL 15                |
+| Transformations  | dbt                           |
+| Orchestration    | Apache Airflow 2.8            |
+| Visualization    | Metabase                       |
+| Containerization | Docker Compose                  |
+| Testing          | pytest, dbt tests                |
+| Code Quality     | Ruff (linting + formatting)       |
+| Version Control  | Git, GitHub                        |
 
 ---
 
@@ -111,12 +111,15 @@ Every run executes dbt tests before anything reaches the reporting layer: `not_n
 PASS=18 WARN=0 ERROR=0
 ```
 
-Some of these tests caught real issues during development  - not just schema typos, but genuine data quality problems in the source APIs (duplicate user records from a shared public demo API, invalid price ranges). That's the actual value of testing a pipeline like this: it surfaces the messy reality of external data instead of assuming it's clean.
+Some of these tests caught real issues during development - not just schema typos, but genuine data quality problems in the source APIs (duplicate user records from a shared public demo API, invalid price ranges). That's the actual value of testing a pipeline like this: it surfaces the messy reality of external data instead of assuming it's clean.
 
 ---
+
 ## Continuous Integration
 
 GitHub Actions runs on every push: pytest for the ETL code, and CodeQL for static security analysis.
+
+---
 
 ## Dashboard
 
@@ -140,15 +143,17 @@ Both datasets show a revenue peak in April 2026 - worth noting the source data i
 
 ## Azure / Databricks version
 
-I also rebuilt the Bronze → Silver pipeline on Azure - Storage (ADLS Gen2) instead of Postgres, Databricks instead of Airflow, Delta Lake instead of plain tables. Same source APIs, same business logic, different infrastructure.
+I also rebuilt the full pipeline on Azure - Storage (ADLS Gen2) instead of Postgres, Databricks instead of Airflow, Delta Lake instead of plain tables. Same source APIs, same business logic, different infrastructure. Bronze, Silver, and Gold are all implemented and running end-to-end.
 
 A few decisions worth explaining:
 
 - **Managed Identity over access keys** for Databricks → Storage auth, so no secrets live in code or config.
-- **`MERGE INTO` for Silver, not full overwrite** = same idea as the incremental dbt models above, just expressed through Delta Lake's upsert semantics instead of a `WHERE` clause and a watermark column.
-- **Deduplication before every merge** = Delta's `MERGE` fails outright if the source has multiple rows matching the same target key, which is exactly what happens on repeated pipeline runs against an append-only Bronze layer. Each Silver transformation now dedupes by its entity key, keeping the most recent snapshot, before merging.
+- **`MERGE INTO` for Silver, not full overwrite** - same idea as the incremental dbt models above, just expressed through Delta Lake's upsert semantics instead of a `WHERE` clause and a watermark column.
+- **Deduplication before every merge** - Delta's `MERGE` fails outright if the source has multiple rows matching the same target key, which is exactly what happens on repeated pipeline runs against an append-only Bronze layer. Each Silver transformation dedupes by its entity key, keeping the most recent snapshot, before merging.
+- **Gold as full overwrite, not merge** - mirrors the Postgres/dbt Gold models (`materialized='table'`): revenue summary, customer LTV (with a `RANK()` window function over lifetime spend), and monthly revenue trend. Gold is fully derived from Silver on every run, so a full recompute is cheap and simpler than incremental upserts here.
+- **Orchestrated with Databricks Workflows on Serverless compute**, scheduled weekly rather than daily - this is a personal project running on free-tier cloud credits, so the schedule is tuned to actual usage rather than mimicking a real production cadence. Serverless spins up only for the run and terminates immediately after, so idle compute never accrues cost.
 
-This isn't a replacement for the Postgres/dbt version = it's a second implementation of the same problem, mostly built to get real, hands-on experience with the Azure/Databricks stack rather than to "upgrade" anything.
+This isn't a replacement for the Postgres/dbt version - it's a second implementation of the same problem, mostly built to get real, hands-on experience with the Azure/Databricks stack rather than to "upgrade" anything.
 
 Code lives in `azure_databricks/`.
 
@@ -181,6 +186,8 @@ E-commerce-analytics-platform/
 git clone https://github.com/offANTI/E-commerce-analytics-platform.git
 cd E-commerce-analytics-platform
 
+cp .env.example .env   # fill in your own values
+
 docker compose up -d
 
 docker exec -it bsg_etl_app python main.py
@@ -193,7 +200,7 @@ Metabase: `http://localhost:3000`
 
 ## Current limitations
 
-The ETL app runs separately from the Airflow DAG right now. The blocker is a dependency mismatch = the ETL uses Python 3.11 with Pydantic v2, Airflow 2.8 is on Python 3.8. Forcing them into one environment would make the whole deployment fragile for no good reason.
+The ETL app runs separately from the Airflow DAG right now. The blocker is a dependency mismatch - the ETL uses Python 3.11 with Pydantic v2, Airflow 2.8 is on Python 3.8. Forcing them into one environment would make the whole deployment fragile for no good reason.
 
 In a real production setup, I'd isolate the ETL entirely and trigger it through `KubernetesPodOperator`, so Airflow and the ETL can each run their own Python environment without fighting each other.
 
@@ -201,11 +208,9 @@ In a real production setup, I'd isolate the ETL entirely and trigger it through 
 
 ## What's next
 
-- Data quality checks for the Azure/Databricks version = the Postgres side has dbt tests, the PySpark side doesn't have an equivalent yet
-- Move orchestration on the Azure side from manual notebook runs to Databricks Workflows
-- Add CI coverage for `azure_databricks/` = the current GitHub Actions setup covers `src/` and `dbt/`, not the PySpark code
+- Data quality checks for the Azure/Databricks version - the Postgres side has dbt tests, the PySpark side doesn't have an equivalent yet
+- Add CI coverage for `azure_databricks/` - the current GitHub Actions setup covers `src/` and `dbt/`, not the PySpark code
 - Data freshness monitoring on the Postgres pipeline
-
 ---
 
 ## Author
