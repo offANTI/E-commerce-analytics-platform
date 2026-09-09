@@ -7,6 +7,7 @@ sys.path.append(os.path.abspath(".."))
 
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
+from delta.tables import DeltaTable
 
 from extract.api_client import APIClient
 from storage.bronze_writer import write_to_bronze
@@ -40,6 +41,8 @@ def to_bronze_df(raw_data, source_name):
     df = spark.createDataFrame(rows)
     return df.withColumn("ingestion_id", F.monotonically_increasing_id())
 
+
+
 logger.info("Starting extract phase")
 
 dummy_client = APIClient(base_url="https://dummyjson.com")
@@ -59,6 +62,21 @@ write_to_bronze(to_bronze_df(dummy_products_raw, "dummyjson"), f"{BRONZE_BASE}/d
 write_to_bronze(to_bronze_df(dummy_categories_raw, "dummyjson"), f"{BRONZE_BASE}/dummy_categories/")
 write_to_bronze(to_bronze_df(escuela_products_raw, "escuela"), f"{BRONZE_BASE}/escuela_products/")
 write_to_bronze(to_bronze_df(escuela_users_raw, "escuela"), f"{BRONZE_BASE}/escuela_users/")
+
+logger.info("Starting Silver layer build")
+
+
+build_silver_dummy_products(spark, BRONZE_BASE, SILVER_BASE)
+build_silver_escuela_products(spark, BRONZE_BASE, SILVER_BASE)
+build_silver_users(spark, BRONZE_BASE, SILVER_BASE)
+
+
+logger.info("Generating mock orders")
+mock_orders_df = generate_mock_orders(spark, SILVER_BASE)
+write_to_bronze(mock_orders_df, f"{BRONZE_BASE}/orders/")
+
+
+build_silver_orders(spark, BRONZE_BASE, SILVER_BASE)
 
 logger.info("Starting Gold layer build")
 build_gold_revenue_summary(spark, SILVER_BASE, GOLD_BASE)

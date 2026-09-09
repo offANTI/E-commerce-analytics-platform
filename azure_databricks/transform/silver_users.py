@@ -9,7 +9,8 @@ def build_silver_users(spark: SparkSession, bronze_base: str, silver_base: str) 
     schema = "id INT, email STRING, name STRING, role STRING, avatar STRING"
 
     parsed_df = (
-        spark.read.format("delta").load(f"{bronze_base}/escuela_users/")
+        spark.read.format("delta")
+        .load(f"{bronze_base}/escuela_users/")
         .withColumn("parsed", F.from_json("raw_data", schema))
         .select(
             F.col("parsed.id").alias("user_id"),
@@ -18,6 +19,7 @@ def build_silver_users(spark: SparkSession, bronze_base: str, silver_base: str) 
             F.col("parsed.role").alias("role"),
             F.col("parsed.avatar").alias("avatar_url"),
             F.col("loaded_at"),
+            F.col("ingestion_id"),
         )
         .filter(F.col("email").isNotNull())
     )

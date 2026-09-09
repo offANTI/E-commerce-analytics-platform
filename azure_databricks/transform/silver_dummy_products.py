@@ -9,7 +9,8 @@ def build_silver_dummy_products(spark: SparkSession, bronze_base: str, silver_ba
     schema = "id INT, title STRING, brand STRING, category STRING, price DOUBLE, stock INT"
 
     parsed_df = (
-        spark.read.format("delta").load(f"{bronze_base}/dummy_products/")
+        spark.read.format("delta")
+        .load(f"{bronze_base}/dummy_products/")
         .withColumn("parsed", F.from_json("raw_data", schema))
         .select(
             F.col("parsed.id").alias("id"),
@@ -19,6 +20,7 @@ def build_silver_dummy_products(spark: SparkSession, bronze_base: str, silver_ba
             F.col("parsed.price").cast("decimal(10,2)").alias("price"),
             F.col("parsed.stock").cast("int").alias("stock"),
             F.col("loaded_at"),
+            F.col("ingestion_id"),
         )
         .filter(F.col("price").isNotNull())
     )

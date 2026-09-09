@@ -40,24 +40,29 @@ def generate_mock_orders(
 
     now = datetime.now(timezone.utc)
     orders = []
-    for _ in range(order_count):
+    for i in range(order_count):
         user_id = random.choice(user_ids)
         product = random.choice(product_pool)
         quantity = random.randint(1, 5)
         unit_price = product["price"]
         total_amount = round(quantity * unit_price, 2)
         order_date = now - timedelta(days=random.randint(0, 90))
-        orders.append({
-            "order_id": str(uuid.uuid4()),
-            "user_id": user_id,
-            "product_id": product["product_id"],
-            "store_name": product["store_name"],
-            "quantity": quantity,
-            "unit_price": unit_price,
-            "total_amount": total_amount,
-            "order_date": order_date.date().isoformat(),
-            "created_at": now.isoformat(),
-        })
+
+        order_id = f"MOCK-{seed}-{i:06d}"
+        
+        orders.append(
+            {
+                "order_id": order_id,
+                "user_id": user_id,
+                "product_id": product["product_id"],
+                "store_name": product["store_name"],
+                "quantity": quantity,
+                "unit_price": unit_price,
+                "total_amount": total_amount,
+                "order_date": order_date.date().isoformat(),
+                "created_at": now.isoformat(),
+            }
+        )
 
     print(f"Mock orders generated successfully. rows={order_count}")
     return spark.createDataFrame(orders)
