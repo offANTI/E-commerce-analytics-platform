@@ -35,7 +35,6 @@ jobs:
         with:
           distribution: "temurin"
           java-version: "17"
-          cache: "maven"
 
       - name: Install dependencies
         working-directory: azure_databricks
