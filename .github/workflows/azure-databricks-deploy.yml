@@ -59,7 +59,7 @@ jobs:
 
       - name: Verify Databricks authentication
         run: |
-           --var="databricks_host=${{ vars.DATABRICKS_HOST }}"
+            --var="databricks_host=${{ vars.DATABRICKS_HOST }}"
 
       - name: Validate Databricks bundle
         run: |
