@@ -1,5 +1,4 @@
 import random
-import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
@@ -49,7 +48,7 @@ def generate_mock_orders(
         order_date = now - timedelta(days=random.randint(0, 90))
 
         order_id = f"MOCK-{seed}-{i:06d}"
-        
+
         orders.append(
             {
                 "order_id": order_id,

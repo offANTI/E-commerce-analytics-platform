@@ -3,11 +3,15 @@ import os
 import sys
 from datetime import datetime, timezone
 
-sys.path.append(os.path.abspath(".."))
-
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
-from delta.tables import DeltaTable
+from pathlib import Path
+
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
 from extract.api_client import APIClient
 from storage.bronze_writer import write_to_bronze
@@ -25,7 +29,10 @@ logger = get_project_logger(__name__)
 
 spark = SparkSession.builder.getOrCreate()
 
-STORAGE_ACCOUNT = "rgecommerceanalytics"
+STORAGE_ACCOUNT = os.getenv(
+    "STORAGE_ACCOUNT",
+    "rgecommerceanalytics",
+)
 BRONZE_BASE = f"abfss://bronze@{STORAGE_ACCOUNT}.dfs.core.windows.net"
 SILVER_BASE = f"abfss://silver@{STORAGE_ACCOUNT}.dfs.core.windows.net"
 GOLD_BASE = f"abfss://gold@{STORAGE_ACCOUNT}.dfs.core.windows.net"
