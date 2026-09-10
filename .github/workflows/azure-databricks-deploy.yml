@@ -59,7 +59,7 @@ jobs:
 
       - name: Verify Databricks authentication
         run: |
-             databricks current-user me --host "$DATABRICKS_HOST"
+             databricks -t dev current-user me
 
 
       - name: Validate Databricks bundle
