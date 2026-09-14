@@ -57,11 +57,6 @@ jobs:
       - name: Install Databricks CLI
         uses: databricks/setup-cli@main
 
-      - name: Verify Databricks authentication
-        run: |
-          databricks bundle validate -t dev
-          databricks current-user me
-
       - name: Validate Databricks bundle
         run: |
           databricks bundle validate --target dev
