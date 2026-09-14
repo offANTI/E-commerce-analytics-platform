@@ -59,6 +59,7 @@ jobs:
 
       - name: Verify Databricks authentication
         run: |
+          databricks bundle validate -t dev
           databricks current-user me
 
       - name: Validate Databricks bundle
