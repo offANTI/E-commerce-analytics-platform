@@ -5,10 +5,6 @@ include:
   - resources/*.yml
 
 variables:
-  databricks_host:
-    description: "Azure Databricks workspace URL"
-    type: string
-
   storage_account:
     description: "Azure Storage Account"
     type: string
