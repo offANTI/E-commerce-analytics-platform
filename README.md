@@ -113,34 +113,32 @@ PASS=18 WARN=0 ERROR=0
 
 Some of these tests caught real issues during development - not just schema typos, but genuine data quality problems in the source APIs (duplicate user records from a shared public demo API, invalid price ranges). That's the actual value of testing a pipeline like this: it surfaces the messy reality of external data instead of assuming it's clean.
 
----
-
 ## Continuous Integration
 
-GitHub Actions runs on every push: pytest for the ETL code, and CodeQL for static security analysis.
+GitHub Actions runs automated checks on every push and pull request.
 
----
+```text
+Pull Request / Push
+        │
+        ├── pytest
+        │     ├── unit tests
+        │     └── PySpark data quality tests
+        │
+        ├── Ruff
+        │     └── linting / formatting
+        │
+        └── CodeQL
+              └── static security analysis
+```
 
-## Dashboard
-
-Built in Metabase on top of the Gold models. Tracks revenue, average order value, customer lifetime value, repeat customer rate, top-selling products, and monthly trends.
-
-![Dashboard](docs/dashboard.jpg)
-
----
-
-## Sample insights
-
-| Metric              |       Escuela | DummyJSON |
-| -------------------- | ------------: | --------: |
-| Revenue               |         ~$30M |    ~$300K |
-| Average Order Value    |      ~$10,000 |     ~$700 |
-| Market Profile          | Premium / B2B |    Budget |
-
-Both datasets show a revenue peak in April 2026 - worth noting the source data is synthetic, so this isn't a real business signal, but it's a good example of the kind of pattern this reporting layer is built to surface.
-
----
-
+## GitHub Actions workflows live in .github/workflows/:
+```
+.github/workflows/
+├── tests.yml
+├── data-quality.yml
+├── codeql.yml
+└── azure-databricks-deploy.yml
+```
 ## Azure / Databricks version
 
 I also rebuilt the full pipeline on Azure - Storage (ADLS Gen2) instead of Postgres, Databricks instead of Airflow, Delta Lake instead of plain tables. Same source APIs, same business logic, different infrastructure. Bronze, Silver, and Gold are all implemented and running end-to-end.
@@ -162,15 +160,35 @@ Code lives in `azure_databricks/`.
 ## Project structure
 
 ```text
-E-commerce-analytics-platform/
+E-commerce-Analytics-Platform/
+├── .github/
+│   └── workflows/
+│       ├── tests.yml
+│       ├── data-quality.yml
+│       ├── codeql.yml
+│       └── azure-databricks-deploy.yml
+│
 ├── azure_databricks/
+│   ├── extract/
+│   ├── notebooks/
+│   │   └── pipeline.py
+│   ├── storage/
+│   ├── transform/
+│   ├── utils/
+│   └── tests/
+│       ├── unit/
+│       └── data_quality/
+│
 ├── config/
 ├── dags/
 ├── database/
 ├── dbt/
+├── docs/
+├── resources/
+│   └── jobs.yml
 ├── src/
 ├── tests/
-├── utils/
+├── databricks.yml
 ├── docker-compose.yml
 ├── Dockerfile
 ├── Dockerfile.airflow
@@ -180,6 +198,72 @@ E-commerce-analytics-platform/
 
 ---
 
+## Current limitations
+
+The PostgreSQL/Airflow implementation is fully reproducible locally through Docker Compose.
+
+The Azure/Databricks implementation has been configured and validated in Azure Databricks, but the current Azure subscription is no longer active. Because the Databricks workspace is inactive, the CI deployment workflow cannot currently create or update Databricks resources.
+
+The code, tests, bundle configuration and GitHub Actions workflow remain in the repository so the Azure deployment can be reproduced once an active Databricks workspace is available.
+
+## Dashboard
+
+Built in Metabase on top of the Gold models. It tracks revenue, average order value, customer lifetime value, repeat customer rate, top-selling products, and monthly trends.
+
+## Azure Databricks in action
+
+The same pipeline was rebuilt on Azure Databricks using ADLS Gen2, Delta Lake, PySpark, and Databricks Jobs.
+
+<table>
+  <tr>
+    <td align="center" width="50%">
+      <img src="docs/databricks-job.png" width="100%">
+      <br><br>
+      <b>Databricks Job</b>
+      <br>
+      <sub>Scheduled ecommerce analytics pipeline</sub>
+    </td>
+    <td align="center" width="50%">
+      <img src="docs/databricks-task.jpg" width="100%">
+      <br><br>
+      <b>Pipeline Task</b>
+      <br>
+      <sub>Python script running on Serverless compute</sub>
+    </td>
+  </tr>
+  <tr>
+    <td align="center" width="50%">
+      <img src="docs/databricks-runs.jpg" width="100%">
+      <br><br>
+      <b>Successful Runs</b>
+      <br>
+      <sub>Scheduled and manual executions</sub>
+    </td>
+    <td align="center" width="50%">
+      <img src="docs/dashboard.jpg" width="100%">
+      <br><br>
+      <b>Metabase Dashboard</b>
+      <br>
+      <sub>Business metrics built from Gold models</sub>
+    </td>
+  </tr>
+</table>
+
+The Databricks Job uses Serverless compute and is scheduled for weekly execution. The pipeline is implemented as a Python script and follows the same Bronze, Silver, and Gold architecture as the PostgreSQL version.
+
+The screenshots show the Databricks Job configuration, the `run_full_pipeline` task, successful executions, and the final analytics dashboard.
+
+## Sample insights
+
+| Metric              |       Escuela | DummyJSON |
+| -------------------- | ------------: | --------: |
+| Revenue               |         ~$30M |    ~$300K |
+| Average Order Value    |      ~$10,000 |     ~$700 |
+| Market Profile          | Premium / B2B |    Budget |
+
+Both datasets show a revenue peak in April 2026 - worth noting the source data is synthetic, so this isn't a real business signal, but it's a good example of the kind of pattern this reporting layer is built to surface.
+
+---
 ## Getting started
 
 ```bash
@@ -208,9 +292,10 @@ In a real production setup, I'd isolate the ETL entirely and trigger it through 
 
 ## What's next
 
-- Data quality checks for the Azure/Databricks version - the Postgres side has dbt tests, the PySpark side doesn't have an equivalent yet
-- Add CI coverage for `azure_databricks/` - the current GitHub Actions setup covers `src/` and `dbt/`, not the PySpark code
-- Data freshness monitoring on the Postgres pipeline
+- Add data freshness monitoring to the PostgreSQL pipeline.
+- Add Azure Databricks smoke tests against a dedicated development workspace.
+- Separate development and production Databricks Bundle targets.
+- Add pipeline observability and runtime metrics.
 ---
 
 ## Author
