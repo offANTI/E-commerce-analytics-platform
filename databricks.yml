@@ -7,16 +7,13 @@ include:
 variables:
   databricks_host:
     description: "Azure Databricks workspace URL"
-    type: string
 
   storage_account:
     description: "Azure Storage Account"
-    type: string
     default: "rgecommerceanalytics"
 
   spark_python_path:
     description: "Path to pipeline.py"
-    type: string
     default: "azure_databricks/notebooks/pipeline.py"
 
 targets:
