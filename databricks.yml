@@ -4,12 +4,24 @@ bundle:
 include:
   - resources/jobs.yml
 
+variables:
+  databricks_host:
+    description: "Azure Databricks workspace URL"
+    type: string
+
+  storage_account:
+    description: "Azure Storage Account"
+    type: string
+    default: "rgecommerceanalytics"
+
+  spark_python_path:
+    description: "Path to pipeline.py"
+    type: string
+    default: "azure_databricks/notebooks/pipeline.py"
+
 targets:
   dev:
     mode: development
 
-variables:
-  spark_python_path:
-    description: "Path to run_full_pipeline.py"
-    type: string
-    default: azure_databricks/pipeline/run_full_pipeline.py
+    workspace:
+      host: ${var.databricks_host}
