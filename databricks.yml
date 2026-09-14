@@ -22,6 +22,3 @@ variables:
 targets:
   dev:
     mode: development
-
-    workspace:
-      host: ${var.databricks_host}
