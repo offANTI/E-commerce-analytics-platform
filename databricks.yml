@@ -8,14 +8,7 @@ targets:
   dev:
     mode: development
 
-    workspace:
-      host: ${var.databricks_host}
-
 variables:
-  databricks_host:
-    description: "Azure Databricks workspace URL"
-    type: string
-
   spark_python_path:
     description: "Path to run_full_pipeline.py"
     type: string
