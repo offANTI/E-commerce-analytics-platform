@@ -1,6 +1,5 @@
 resources:
   jobs:
-
     ecommerce_analytics_pipeline:
       name: ecommerce-analytics-pipeline
 
@@ -14,14 +13,12 @@ resources:
       tasks:
         - task_key: run_full_pipeline
 
+          environment_key: default
+
           spark_python_task:
             python_file: ../azure_databricks/notebooks/pipeline.py
 
-          new_cluster:
-            spark_version: "15.4.x-scala2.12"
-            node_type_id: "Standard_D4ds_v5"
-            num_workers: 1
-
-            spark_env_vars:
-              STORAGE_ACCOUNT: ${var.storage_account}
-              PYSPARK_PYTHON: "/databricks/python3/bin/python3"
+      environments:
+        - environment_key: default
+          spec:
+            client: "1"
