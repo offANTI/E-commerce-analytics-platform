@@ -15,7 +15,7 @@ resources:
         - task_key: run_full_pipeline
 
           spark_python_task:
-            python_file: ${var.spark_python_path}
+            python_file: ../azure_databricks/notebooks/pipeline.py
 
           new_cluster:
             spark_version: "15.4.x-scala2.12"
